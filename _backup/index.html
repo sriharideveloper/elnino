@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="An immersive data visualization exploring El Niño — the ocean's thermal pulse reshaping our climate.">
+    <title>El Niño — The Heat Engine</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Outfit:wght@200;300;400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <!-- Film Grain Overlay -->
+    <div class="grain" aria-hidden="true"></div>
+
+    <!-- Cinematic Borders -->
+    <div class="cinematic-border cinematic-top" aria-hidden="true"></div>
+    <div class="cinematic-border cinematic-bottom" aria-hidden="true"></div>
+
+    <!-- Preloader -->
+    <div class="preloader" id="preloader">
+        <div class="preloader-inner">
+            <div class="preloader-line"></div>
+            <h2 class="preloader-title">EL NIÑO</h2>
+            <div class="preloader-bar">
+                <div class="preloader-bar-fill"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Cursor -->
+    <div class="cursor cursor-dot" id="cursor-dot"></div>
+    <div class="cursor cursor-ring" id="cursor-ring"></div>
+
+    <!-- Scroll Progress Bar -->
+    <div class="progress-bar" id="progress-bar"></div>
+
+    <!-- Three.js Background -->
+    <canvas id="webgl-canvas" aria-hidden="true"></canvas>
+
+    <!-- Main Content Wrapper -->
+    <main id="smooth-wrapper">
+        <div id="smooth-content">
+
+            <!-- ==================== HERO ==================== -->
+            <section class="section hero" id="hero">
+                <div class="hero-content">
+                    <span class="kicker" data-animate="fade-up">Anomalous Warming</span>
+                    <h1 class="hero-title">El Niño</h1>
+                    <p class="hero-sub" data-animate="fade-up">The ocean is breathing heavy.</p>
+                </div>
+                <div class="hero-aside" data-animate="fade-up">
+                    <span class="hero-year">2026</span>
+                    <span class="hero-coord">0°N 170°W</span>
+                </div>
+                <div class="scroll-cue" id="scroll-cue">
+                    <div class="scroll-cue-line"></div>
+                    <span>Scroll to experience</span>
+                </div>
+            </section>
+
+            <!-- ==================== INTERSTITIAL 1 ==================== -->
+            <section class="section interstitial">
+                <h2 class="interstitial-text" data-split-chars>The ocean remembers</h2>
+            </section>
+
+            <!-- ==================== DATA ==================== -->
+            <section class="section data-section" id="data">
+                <div class="data-layout">
+                    <div class="oni-panel">
+                        <span class="label-mono">OCEANIC NIÑO INDEX</span>
+                        <div class="oni-number-wrap">
+                            <span class="oni-value" id="oni-display">—</span>
+                            <span class="oni-unit">°C</span>
+                        </div>
+                        <span class="oni-status" id="oni-status">Fetching live data…</span>
+                    </div>
+                    <div class="chart-panel">
+                        <span class="label-mono">ONI RECORD · 1950 – 2025</span>
+                        <canvas id="oni-chart"></canvas>
+                        <div class="chart-legend">
+                            <span class="legend-el"><i></i>El Niño</span>
+                            <span class="legend-la"><i></i>La Niña</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="ticker-strip">
+                    <span class="label-mono ticker-label">LIVE IMPACT REPORTS</span>
+                    <div class="ticker-track">
+                        <div class="ticker" id="ticker">
+                            <span class="ticker-item">Fetching headlines…</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==================== THE DICHOTOMY (SPLIT SCREEN) ==================== -->
+            <section class="section dichotomy-section" id="dichotomy">
+                <div class="dichotomy-container">
+                    
+                    <div class="split-layer la-nina" id="split-lanina">
+                        <div class="split-bg" style="background-image: url('lanina_split_real.png')"></div>
+                        <div class="split-overlay"></div>
+                        <div class="split-content">
+                            <span class="label-mono split-label">ANOMALOUS COOLING</span>
+                            <h2 class="split-title">La Niña</h2>
+                            <p class="split-desc">The ocean exhales. Deep, frigid waters well up, bringing temporary equilibrium, yet triggering chaotic Atlantic hurricanes and relentless rainfall.</p>
+                        </div>
+                    </div>
+
+                    <div class="split-layer el-nino" id="split-elnino">
+                        <div class="split-bg" style="background-image: url('elnino_split_real.png')"></div>
+                        <div class="split-overlay"></div>
+                        <div class="split-content right-align">
+                            <span class="label-mono split-label">ANOMALOUS WARMING</span>
+                            <h2 class="split-title">El Niño</h2>
+                            <p class="split-desc">The ocean inhales. Trade winds falter. A massive pool of superheated water spreads eastward, igniting the atmosphere into devastating extremes.</p>
+                        </div>
+                    </div>
+
+                    <div class="split-slider" id="split-slider">
+                        <div class="slider-line"></div>
+                        <div class="slider-handle">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==================== ANATOMY OF A SHIFT ==================== -->
+            <section class="section anatomy-section" id="anatomy">
+                <div class="anatomy-container">
+                    <div class="anatomy-visual-wrap">
+                        <div class="anatomy-visual-sticky">
+                            <div class="anatomy-bg anatomy-bg-1" style="background-image: url('anatomy_1_real.png')"></div>
+                            <div class="anatomy-bg anatomy-bg-2" style="background-image: url('anatomy_2_real.png')"></div>
+                            <div class="anatomy-bg anatomy-bg-3" style="background-image: url('anatomy_3_real.png')"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="anatomy-content">
+                        <div class="anatomy-step" id="step-1">
+                            <div class="anatomy-card">
+                                <span class="anatomy-step-num">01</span>
+                                <h3 class="anatomy-step-title">The Winds Falter</h3>
+                                <p class="anatomy-step-desc">For years, the reliable trade winds push warm surface water toward Indonesia. But inevitably, they weaken. The atmospheric engine stalls.</p>
+                            </div>
+                        </div>
+                        <div class="anatomy-step" id="step-2">
+                            <div class="anatomy-card">
+                                <span class="anatomy-step-num">02</span>
+                                <h3 class="anatomy-step-title">The Thermocline Collapses</h3>
+                                <p class="anatomy-step-desc">Without the winds to hold it back, the barrier between warm surface water and the freezing abyss flattens. The ocean layers mix, raising the global baseline.</p>
+                            </div>
+                        </div>
+                        <div class="anatomy-step" id="step-3">
+                            <div class="anatomy-card">
+                                <span class="anatomy-step-num">03</span>
+                                <h3 class="anatomy-step-title">The Thermal Pulse</h3>
+                                <p class="anatomy-step-desc">A colossal pool of heat surges eastward across the Pacific. Trillions of tons of warmed water evaporate, loading the atmosphere with terrifying potential energy.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==================== GLOBAL HEATMAP ==================== -->
+            <section class="section globe-section" id="globe-viz">
+                <div class="globe-header">
+                    <span class="label-mono">MACROSCOPIC VIEW</span>
+                    <h2 class="globe-title">The Pacific Warm Pool</h2>
+                    <p class="globe-desc">Interactive visualization of El Niño Sea Surface Temperature anomalies and ocean currents. Drag to rotate, scroll to zoom.</p>
+                </div>
+                <div class="globe-wrapper" id="globe-container"></div>
+            </section>
+
+            <!-- ==================== INTERSTITIAL 2 ==================== -->
+            <section class="section interstitial">
+                <h2 class="interstitial-text" data-split-chars>The consequences are already here</h2>
+            </section>
+
+            <!-- ==================== IMPACTS SECTION (HORIZONTAL SCROLL) ==================== -->
+            <section class="section impacts-section" id="impacts">
+                <div class="impacts-pin-container">
+                    <div class="impacts-sticky-wrap">
+                        <div class="impacts-header">
+                            <span class="label-mono">THE CONSEQUENCES</span>
+                            <h2 class="impacts-title">Ecological Ruin</h2>
+                        </div>
+                        <div class="impacts-track-wrapper">
+                            <div class="impacts-track" id="impacts-track">
+                                
+                                <!-- Card 01: Droughts -->
+                                <div class="impact-card" id="card-droughts">
+                                    <div class="impact-card-bg-wrap">
+                                        <div class="impact-card-bg" style="background-image: url('drought_real.png')"></div>
+                                    </div>
+                                    <div class="impact-card-overlay"></div>
+                                    <div class="impact-card-num">01</div>
+                                    <div class="impact-card-content">
+                                        <h3 class="impact-card-heading">Droughts</h3>
+                                        <p class="impact-card-body">Precipitation patterns invert. Forests that rely on predictable moisture turn to tinder. The soil fractures. Rivers that fed civilizations recede to trickles.</p>
+                                    </div>
+                                </div>
+
+                                <!-- Card 02: Deluge -->
+                                <div class="impact-card" id="card-deluge">
+                                    <div class="impact-card-bg-wrap">
+                                        <div class="impact-card-bg" style="background-image: url('deluge_real.png')"></div>
+                                    </div>
+                                    <div class="impact-card-overlay"></div>
+                                    <div class="impact-card-num">02</div>
+                                    <div class="impact-card-content">
+                                        <h3 class="impact-card-heading">Deluge</h3>
+                                        <p class="impact-card-body">While some land burns, others drown. Atmospheric rivers release months of rain in hours, overwhelming the earth's capacity to absorb.</p>
+                                    </div>
+                                </div>
+
+                                <!-- Card 03: Collapse -->
+                                <div class="impact-card" id="card-collapse">
+                                    <div class="impact-card-bg-wrap">
+                                        <div class="impact-card-bg" style="background-image: url('collapse_real.png')"></div>
+                                    </div>
+                                    <div class="impact-card-overlay"></div>
+                                    <div class="impact-card-num">03</div>
+                                    <div class="impact-card-content">
+                                        <h3 class="impact-card-heading">Collapse</h3>
+                                        <p class="impact-card-body">Warming waters force marine life to migrate or perish. Coral reefs bleach into ghost structures. The food web shatters from the bottom.</p>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==================== STATISTICS ==================== -->
+            <section class="section stats-section" id="stats">
+                <div class="stats-grid">
+                    <div class="stat">
+                        <div class="stat-top">
+                            <span class="stat-value" data-count-to="23" data-decimals="0">0</span>
+                            <span class="stat-suffix">M+</span>
+                        </div>
+                        <span class="stat-label">People Displaced Annually</span>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-top">
+                            <span class="stat-value" data-count-to="1.5" data-decimals="1">0</span>
+                            <span class="stat-suffix">°C</span>
+                        </div>
+                        <span class="stat-label">Global Temperature Anomaly</span>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-top">
+                            <span class="stat-value" data-count-to="65" data-decimals="0">0</span>
+                            <span class="stat-suffix">%</span>
+                        </div>
+                        <span class="stat-label">Coral Reef Decline</span>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-top">
+                            <span class="stat-value" data-count-to="45" data-decimals="0">0</span>
+                            <span class="stat-suffix">B$</span>
+                        </div>
+                        <span class="stat-label">Economic Losses Per Event</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==================== INTERSTITIAL 3 ==================== -->
+            <section class="section interstitial">
+                <h2 class="interstitial-text" data-split-chars>The evidence is accumulating</h2>
+            </section>
+
+            <!-- ==================== LIVE INTELLIGENCE ==================== -->
+            <section class="section intel-section" id="intel">
+                <div class="intel-header">
+                    <span class="label-mono">LIVE INTELLIGENCE</span>
+                    <h2 class="intel-title">The World Right Now</h2>
+                    <p class="intel-sub">Real-time data pulled from GDELT, NASA EONET, and ReliefWeb.</p>
+                </div>
+
+                <div class="intel-tabs" role="tablist">
+                    <button class="intel-tab active" data-tab="news" role="tab" aria-selected="true">News</button>
+                    <button class="intel-tab" data-tab="events" role="tab" aria-selected="false">Active Events</button>
+                    <button class="intel-tab" data-tab="reports" role="tab" aria-selected="false">Reports</button>
+                </div>
+
+                <div class="intel-panel active" id="panel-news" role="tabpanel">
+                    <div class="news-grid" id="news-grid">
+                        <!-- Populated by JS: GDELT DOC API -->
+                    </div>
+                </div>
+
+                <div class="intel-panel" id="panel-events" role="tabpanel">
+                    <div class="events-list" id="events-list">
+                        <!-- Populated by JS: NASA EONET API -->
+                    </div>
+                </div>
+
+                <div class="intel-panel" id="panel-reports" role="tabpanel">
+                    <div class="reports-grid" id="reports-grid">
+                        <!-- Populated by JS: ReliefWeb API v2 -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==================== DOCUMENTARY EVIDENCE ==================== -->
+            <section class="section video-section" id="videos">
+                <div class="video-pin-container">
+                    <div class="video-sticky-wrap">
+                        <div class="video-header">
+                            <span class="label-mono">DOCUMENTARY EVIDENCE</span>
+                            <h2 class="video-title">See For Yourself</h2>
+                        </div>
+                        <div class="video-carousel-track-wrapper">
+                            <div class="video-carousel-track" id="video-carousel-track">
+                                <!-- Populated by JS: Custom rounded video cards -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==================== CONCLUSION ==================== -->
+            <section class="section conclusion" id="conclusion">
+                <div class="conclusion-inner">
+                    <p class="conclusion-text" id="conclusion-text">We will not tell you how to prevent it or what to do. You saw it now. Decide.</p>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <!-- Video Player Modal -->
+    <div class="video-modal" id="video-modal" aria-hidden="true" role="dialog">
+        <div class="video-modal-bg" id="video-modal-bg"></div>
+        <div class="video-modal-content">
+            <button class="video-modal-close" id="video-modal-close" aria-label="Close video">&times;</button>
+            <div class="video-modal-iframe-wrap">
+                <iframe id="modal-iframe" src="" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+            </div>
+        </div>
+    </div>
+
+    <!-- Libraries -->
+    <script src="https://unpkg.com/@studio-freight/lenis@1.0.42/dist/lenis.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://unpkg.com/globe.gl"></script>
+
+    <!-- App -->
+    <script src="script.js"></script>
+</body>
+</html>

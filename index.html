@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="An immersive, live data visualization of El Niño — the ocean's thermal pulse reshaping our climate.">
+    <title>El Niño — The Heat Engine</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;500;600&family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,500;1,6..96,400;1,6..96,500&family=Barlow+Condensed:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <link rel="icon" href="data:,">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <!-- Film Grain Overlay -->
+    <div class="grain" aria-hidden="true"></div>
+
+    <!-- Cinematic Borders — double as the live HUD -->
+    <div class="cinematic-border cinematic-top">
+        <div class="hud hud-top">
+            <span class="hud-brand">El Niño <i>/</i> The Heat Engine</span>
+            <div class="hud-readouts">
+                <span class="hud-live"><b class="live-dot" id="hud-dot"></b><span id="hud-live-label">CONNECTING</span></span>
+                <span class="hud-item">NIÑO 3.4 <b id="hud-nino">—</b></span>
+                <span class="hud-item">ONI <b id="hud-oni">—</b></span>
+                <span class="hud-item">OPEN INCIDENTS <b id="hud-events">—</b></span>
+                <span class="hud-item hud-clock" id="hud-clock">--:--:-- UTC</span>
+            </div>
+        </div>
+    </div>
+    <div class="cinematic-border cinematic-bottom">
+        <div class="hud hud-bottom">
+            <span class="hud-section"><b id="hud-index">01</b><i>/</i><span id="hud-total">10</span><em id="hud-name">Prologue</em></span>
+            <span class="hud-scroll"><span class="hud-scroll-track"><span class="hud-scroll-fill" id="hud-scroll-fill"></span></span><b id="hud-pct">000</b></span>
+        </div>
+    </div>
+
+    <!-- Preloader -->
+    <div class="preloader" id="preloader">
+        <div class="preloader-inner">
+            <div class="preloader-line"></div>
+            <h2 class="preloader-title">EL NIÑO</h2>
+            <div class="preloader-bar">
+                <div class="preloader-bar-fill"></div>
+            </div>
+            <span class="preloader-status" id="preloader-status">Tuning in to the Pacific…</span>
+        </div>
+    </div>
+
+    <!-- Custom Cursor -->
+    <div class="cursor cursor-dot" id="cursor-dot"></div>
+    <div class="cursor cursor-ring" id="cursor-ring"></div>
+
+    <!-- Scroll Progress Bar -->
+    <div class="progress-bar" id="progress-bar"></div>
+
+    <!-- Three.js Background: fluid heat shader + 3D particle ocean -->
+    <canvas id="webgl-canvas" aria-hidden="true"></canvas>
+
+    <!-- Main Content Wrapper -->
+    <main id="smooth-wrapper">
+        <div id="smooth-content">
+
+            <!-- ==================== HERO ==================== -->
+            <section class="section hero" id="hero" data-hud="Prologue">
+                <div class="hero-content">
+                    <span class="kicker" data-animate="fade-up">Anomalous Warming</span>
+                    <h1 class="hero-title"><span class="hero-title-inner">El Niño</span></h1>
+                    <p class="hero-sub" data-animate="fade-up">The ocean is breathing heavy.</p>
+                </div>
+                <div class="hero-aside" data-animate="fade-up">
+                    <span class="hero-year">2026</span>
+                    <span class="hero-coord">0°N 170°W — 120°W</span>
+                    <span class="hero-live" id="hero-live">Niño 3.4 · reading…</span>
+                </div>
+                <div class="scroll-cue" id="scroll-cue">
+                    <div class="scroll-cue-line"></div>
+                    <span>Scroll to experience</span>
+                </div>
+            </section>
+
+            <!-- ==================== INTERSTITIAL 1 ==================== -->
+            <section class="section interstitial">
+                <h2 class="interstitial-text" data-split-chars>The ocean remembers</h2>
+            </section>
+
+            <!-- ==================== DATA ==================== -->
+            <section class="section data-section" id="data" data-hud="The Record">
+                <div class="data-layout">
+                    <div class="oni-panel tilt">
+                        <span class="label-mono">NIÑO 3.4 · SEA SURFACE ANOMALY · TODAY</span>
+                        <div class="oni-number-wrap">
+                            <span class="oni-value" id="oni-display">—</span>
+                            <span class="oni-unit">°C</span>
+                        </div>
+                        <span class="oni-status" id="oni-status">Reading the equatorial Pacific…</span>
+                        <div class="oni-meta">
+                            <div class="oni-meta-cell">
+                                <span class="label-mono">Official ONI</span>
+                                <b id="oni-official">—</b>
+                                <i id="oni-season">—</i>
+                            </div>
+                            <div class="oni-meta-cell">
+                                <span class="label-mono">Phase</span>
+                                <b id="oni-phase">—</b>
+                                <i id="oni-phase-sub">—</i>
+                            </div>
+                            <div class="oni-meta-cell">
+                                <span class="label-mono">Rank since 1950</span>
+                                <b id="oni-rank">—</b>
+                                <i id="oni-rank-sub">—</i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chart-panel">
+                        <div class="chart-head">
+                            <span class="label-mono" id="chart-title">OCEANIC NIÑO INDEX · 1950 – NOW</span>
+                            <span class="chart-readout" id="chart-readout">Hover the record</span>
+                        </div>
+                        <canvas id="oni-chart" aria-label="Oceanic Niño Index, every season since 1950"></canvas>
+                        <div class="chart-legend">
+                            <span class="legend-el"><i></i>El Niño</span>
+                            <span class="legend-la"><i></i>La Niña</span>
+                            <span class="legend-src">Source · NOAA Climate Prediction Center</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="ticker-strip">
+                    <span class="label-mono ticker-label"><b class="live-dot" id="ticker-dot"></b>LIVE WIRE</span>
+                    <div class="ticker-track">
+                        <div class="ticker" id="ticker">
+                            <span class="ticker-item">Tuning in to the wire…</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==================== THE DICHOTOMY (SPLIT SCREEN) ==================== -->
+            <section class="section dichotomy-section" id="dichotomy" data-hud="The Dichotomy">
+                <div class="dichotomy-container">
+
+                    <div class="split-layer el-nino" id="split-elnino">
+                        <div class="split-bg" style="background-image: url('elnino_split_real.png')"></div>
+                        <div class="split-overlay"></div>
+                        <div class="split-content right-align">
+                            <span class="label-mono split-label">ANOMALOUS WARMING</span>
+                            <h2 class="split-title">El Niño</h2>
+                            <p class="split-desc">The ocean inhales. Trade winds falter. A massive pool of superheated water spreads eastward, igniting the atmosphere into devastating extremes.</p>
+                        </div>
+                    </div>
+
+                    <div class="split-layer la-nina" id="split-lanina">
+                        <div class="split-bg" style="background-image: url('lanina_split_real.png')"></div>
+                        <div class="split-overlay"></div>
+                        <div class="split-content">
+                            <span class="label-mono split-label">ANOMALOUS COOLING</span>
+                            <h2 class="split-title">La Niña</h2>
+                            <p class="split-desc">The ocean exhales. Deep, frigid waters well up, bringing temporary equilibrium, yet triggering chaotic Atlantic hurricanes and relentless rainfall.</p>
+                        </div>
+                    </div>
+
+                    <div class="split-slider" id="split-slider" role="slider" aria-label="Compare La Niña and El Niño" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50" tabindex="0">
+                        <div class="slider-line"></div>
+                        <div class="slider-handle">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==================== ANATOMY OF A SHIFT ==================== -->
+            <section class="section anatomy-section slab" id="anatomy" data-hud="Anatomy of a Shift">
+                <div class="anatomy-container">
+                    <div class="anatomy-visual-wrap">
+                        <div class="anatomy-visual-sticky">
+                            <div class="anatomy-bg anatomy-bg-1" style="background-image: url('anatomy_1_real.png')"></div>
+                            <div class="anatomy-bg anatomy-bg-2" style="background-image: url('anatomy_2_real.png')"></div>
+                            <div class="anatomy-bg anatomy-bg-3" style="background-image: url('anatomy_3_real.png')"></div>
+                            <div class="anatomy-counter"><b id="anatomy-count">01</b><i>/ 03</i></div>
+                        </div>
+                    </div>
+
+                    <div class="anatomy-content">
+                        <div class="anatomy-step" id="step-1">
+                            <div class="anatomy-card">
+                                <span class="anatomy-step-num">01</span>
+                                <h3 class="anatomy-step-title">The Winds Falter</h3>
+                                <p class="anatomy-step-desc">For years, the reliable trade winds push warm surface water toward Indonesia. But inevitably, they weaken. The atmospheric engine stalls.</p>
+                            </div>
+                        </div>
+                        <div class="anatomy-step" id="step-2">
+                            <div class="anatomy-card">
+                                <span class="anatomy-step-num">02</span>
+                                <h3 class="anatomy-step-title">The Thermocline Collapses</h3>
+                                <p class="anatomy-step-desc">Without the winds to hold it back, the barrier between warm surface water and the freezing abyss flattens. The ocean layers mix, raising the global baseline.</p>
+                            </div>
+                        </div>
+                        <div class="anatomy-step" id="step-3">
+                            <div class="anatomy-card">
+                                <span class="anatomy-step-num">03</span>
+                                <h3 class="anatomy-step-title">The Thermal Pulse</h3>
+                                <p class="anatomy-step-desc">A colossal pool of heat surges eastward across the Pacific. Trillions of tons of warmed water evaporate, loading the atmosphere with terrifying potential energy.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==================== LIVE GLOBE ==================== -->
+            <section class="section globe-section" id="globe-viz" data-hud="The Planet, Live">
+                <div class="globe-wrapper" id="globe-container"></div>
+
+                <div class="globe-header">
+                    <span class="label-mono"><b class="live-dot" id="globe-dot"></b>LIVE · MACROSCOPIC VIEW</span>
+                    <h2 class="globe-title">The Pacific Warm Pool</h2>
+                    <p class="globe-desc">Today's measured sea-surface temperature anomaly, with every open wildfire, storm, flood and drought alert plotted where it is happening. Drag to rotate. Click a marker.</p>
+                    <div class="globe-layers" id="globe-layers" role="group" aria-label="Globe layers"></div>
+                </div>
+
+                <aside class="globe-detail" id="globe-detail" aria-live="polite">
+                    <span class="label-mono" id="gd-cat">SELECT A MARKER</span>
+                    <h3 class="gd-title" id="gd-title">Nothing selected</h3>
+                    <p class="gd-meta" id="gd-meta">Every point on the globe is a real, currently open event.</p>
+                    <a class="gd-link" id="gd-link" target="_blank" rel="noopener noreferrer" hidden>Open source record →</a>
+                </aside>
+
+                <div class="globe-legend">
+                    <div class="legend-scale">
+                        <span>−3°C</span>
+                        <i class="legend-gradient"></i>
+                        <span>+3°C</span>
+                    </div>
+                    <span class="label-mono" id="globe-stamp">Loading sea-surface anomaly…</span>
+                </div>
+            </section>
+
+            <!-- ==================== INTERSTITIAL 2 ==================== -->
+            <section class="section interstitial">
+                <h2 class="interstitial-text" data-split-chars>The consequences are already here</h2>
+            </section>
+
+            <!-- ==================== IMPACTS SECTION (HORIZONTAL SCROLL) ==================== -->
+            <section class="section impacts-section slab" id="impacts" data-hud="Ecological Ruin">
+                <div class="impacts-pin-container">
+                    <div class="impacts-sticky-wrap">
+                        <div class="impacts-header">
+                            <span class="label-mono">THE CONSEQUENCES</span>
+                            <h2 class="impacts-title">Ecological Ruin</h2>
+                        </div>
+                        <div class="impacts-track-wrapper">
+                            <div class="impacts-track" id="impacts-track">
+
+                                <!-- Card 01: Droughts -->
+                                <div class="impact-card" id="card-droughts">
+                                    <div class="impact-card-bg-wrap">
+                                        <div class="impact-card-bg" style="background-image: url('drought_real.png')"></div>
+                                    </div>
+                                    <div class="impact-card-overlay"></div>
+                                    <div class="impact-card-num">01</div>
+                                    <div class="impact-card-content">
+                                        <h3 class="impact-card-heading">Droughts</h3>
+                                        <p class="impact-card-body">Precipitation patterns invert. Forests that rely on predictable moisture turn to tinder. The soil fractures. Rivers that fed civilizations recede to trickles.</p>
+                                        <span class="impact-live" data-live-cat="drought,wildfires"></span>
+                                    </div>
+                                </div>
+
+                                <!-- Card 02: Deluge -->
+                                <div class="impact-card" id="card-deluge">
+                                    <div class="impact-card-bg-wrap">
+                                        <div class="impact-card-bg" style="background-image: url('deluge_real.png')"></div>
+                                    </div>
+                                    <div class="impact-card-overlay"></div>
+                                    <div class="impact-card-num">02</div>
+                                    <div class="impact-card-content">
+                                        <h3 class="impact-card-heading">Deluge</h3>
+                                        <p class="impact-card-body">While some land burns, others drown. Atmospheric rivers release months of rain in hours, overwhelming the earth's capacity to absorb.</p>
+                                        <span class="impact-live" data-live-cat="floods,severeStorms"></span>
+                                    </div>
+                                </div>
+
+                                <!-- Card 03: Collapse -->
+                                <div class="impact-card" id="card-collapse">
+                                    <div class="impact-card-bg-wrap">
+                                        <div class="impact-card-bg" style="background-image: url('collapse_real.png')"></div>
+                                    </div>
+                                    <div class="impact-card-overlay"></div>
+                                    <div class="impact-card-num">03</div>
+                                    <div class="impact-card-content">
+                                        <h3 class="impact-card-heading">Collapse</h3>
+                                        <p class="impact-card-body">Warming waters force marine life to migrate or perish. Coral reefs bleach into ghost structures. The food web shatters from the bottom.</p>
+                                        <span class="impact-live" data-live-sst></span>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==================== STATISTICS ==================== -->
+            <section class="section stats-section" id="stats" data-hud="The Toll">
+                <div class="stats-grid">
+                    <div class="stat">
+                        <div class="stat-top">
+                            <span class="stat-value" data-count-to="23" data-decimals="0">0</span>
+                            <span class="stat-suffix">M+</span>
+                        </div>
+                        <span class="stat-label">People Displaced Annually</span>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-top">
+                            <span class="stat-value" data-count-to="1.5" data-decimals="1">0</span>
+                            <span class="stat-suffix">°C</span>
+                        </div>
+                        <span class="stat-label">Global Temperature Anomaly</span>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-top">
+                            <span class="stat-value" data-count-to="65" data-decimals="0">0</span>
+                            <span class="stat-suffix">%</span>
+                        </div>
+                        <span class="stat-label">Coral Reef Decline</span>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-top">
+                            <span class="stat-value" data-count-to="45" data-decimals="0">0</span>
+                            <span class="stat-suffix">B$</span>
+                        </div>
+                        <span class="stat-label">Economic Losses Per Event</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==================== INTERSTITIAL 3 ==================== -->
+            <section class="section interstitial">
+                <h2 class="interstitial-text" data-split-chars>The evidence is accumulating</h2>
+            </section>
+
+            <!-- ==================== LIVE INTELLIGENCE ==================== -->
+            <section class="section intel-section" id="intel" data-hud="Live Intelligence">
+                <div class="intel-header">
+                    <span class="label-mono">LIVE INTELLIGENCE</span>
+                    <h2 class="intel-title">The World Right Now</h2>
+                    <p class="intel-sub">Pulled straight from open, keyless sources each time you open this page — nothing here is written in advance.</p>
+                </div>
+
+                <div class="intel-status" id="intel-status" aria-live="polite">
+                    <div class="intel-sources" id="intel-sources"></div>
+                    <button class="intel-refresh" id="intel-refresh" type="button">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
+                        <span id="intel-updated">Syncing…</span>
+                    </button>
+                </div>
+
+                <div class="intel-tabs" role="tablist">
+                    <button class="intel-tab active" data-tab="news" role="tab" aria-selected="true">News <i id="count-news"></i></button>
+                    <button class="intel-tab" data-tab="analysis" role="tab" aria-selected="false">Analysis <i id="count-analysis"></i></button>
+                    <button class="intel-tab" data-tab="incidents" role="tab" aria-selected="false">Incidents <i id="count-incidents"></i></button>
+                </div>
+
+                <div class="intel-panel active" id="panel-news" role="tabpanel">
+                    <div class="news-grid" id="news-grid"></div>
+                </div>
+
+                <div class="intel-panel" id="panel-analysis" role="tabpanel">
+                    <div class="reports-grid" id="analysis-grid"></div>
+                </div>
+
+                <div class="intel-panel" id="panel-incidents" role="tabpanel">
+                    <div class="incident-filters" id="incident-filters" role="group" aria-label="Filter incidents"></div>
+                    <div class="events-list" id="events-list"></div>
+                </div>
+            </section>
+
+            <!-- ==================== DOCUMENTARY EVIDENCE ==================== -->
+            <section class="section video-section" id="videos" data-hud="Documentary Evidence">
+                <div class="video-pin-container">
+                    <div class="video-sticky-wrap">
+                        <div class="video-header">
+                            <span class="label-mono">DOCUMENTARY EVIDENCE</span>
+                            <h2 class="video-title">See For Yourself</h2>
+                        </div>
+                        <div class="video-carousel-track-wrapper">
+                            <div class="video-carousel-track" id="video-carousel-track">
+                                <!-- Populated by JS -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==================== CONCLUSION ==================== -->
+            <section class="section conclusion" id="conclusion" data-hud="Decide">
+                <div class="conclusion-inner">
+                    <p class="conclusion-text" id="conclusion-text">We will not tell you how to prevent it or what to do. You saw it now. Decide.</p>
+                    <p class="colophon">Live data · NOAA Coral Reef Watch · NOAA CPC · NASA EONET · GDACS · GDELT · Yale Climate Connections · NASA Science · Grist · RealClimate</p>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <!-- Video Player Modal -->
+    <div class="video-modal" id="video-modal" aria-hidden="true" role="dialog">
+        <div class="video-modal-bg" id="video-modal-bg"></div>
+        <div class="video-modal-content">
+            <button class="video-modal-close" id="video-modal-close" aria-label="Close video">&times;</button>
+            <div class="video-modal-iframe-wrap">
+                <iframe id="modal-iframe" src="" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+            </div>
+        </div>
+    </div>
+
+    <!-- Libraries -->
+    <script src="https://unpkg.com/@studio-freight/lenis@1.0.42/dist/lenis.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+    <script src="data/oni.js"></script>
+
+    <!-- three.js + globe.gl share one pinned three build, then the app boots.
+         If the CDN is unreachable the app still starts, just without 3D. -->
+    <script type="module">
+        const boot = () => {
+            const s = document.createElement('script');
+            s.src = 'script.js';
+            document.body.appendChild(s);
+        };
+        try {
+            const [THREE, globe] = await Promise.all([
+                import('https://esm.sh/three@0.180.0'),
+                import('https://esm.sh/globe.gl@2.46.2?deps=three@0.180.0')
+            ]);
+            window.THREE = THREE;
+            window.Globe = globe.default;
+        } catch (err) {
+            console.warn('3D libraries failed to load — continuing without them.', err);
+        }
+        boot();
+    </script>
+</body>
+</html>
